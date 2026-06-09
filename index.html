@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astra AGI Assistant — Interactive Preview</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* --- DESIGN SYSTEM TOKENS & VARIABLES --- */
+    :root {
+      /* Theme: Aurora (Default) */
+      --color-bg-0: #060818;
+      --color-bg-1: #0b0f24;
+      --color-bg-2: #131836;
+      --color-ink-1: #f0f2ff;
+      --color-ink-2: #b6bbe0;
+      --color-ink-3: #6b73a3;
+      
+      --accent-1: #7c5cff;
+      --accent-2: #2bb6ff;
+      --accent-3: #00d6b8;
+      --accent-gradient: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
+      
+      --glass-bg: rgba(19, 24, 54, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 8px;
+      --transition-smooth: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Theme Overrides */
+    [data-theme="cyberpunk"] {
+      --color-bg-0: #020205;
+      --color-bg-1: #09090e;
+      --color-bg-2: #14121a;
+      --color-ink-1: #00ffcc;
+      --color-ink-2: #ff007f;
+      --color-ink-3: #8a7b9c;
+      --accent-1: #ff007f;
+      --accent-2: #9d00ff;
+      --accent-3: #00ffcc;
+      --glass-bg: rgba(20, 10, 30, 0.6);
+      --glass-border: rgba(255, 0, 127, 0.2);
+    }
+
+    [data-theme="sunset"] {
+      --color-bg-0: #10060c;
+      --color-bg-1: #1a0c14;
+      --color-bg-2: #2a1420;
+      --color-ink-1: #fff2e6;
+      --color-ink-2: #ffaa66;
+      --color-ink-3: #a67389;
+      --accent-1: #ff3366;
+      --accent-2: #ff7733;
+      --accent-3: #ffbb33;
+      --glass-bg: rgba(42, 20, 32, 0.5);
+      --glass-border: rgba(255, 119, 51, 0.15);
+    }
+
+    /* --- BASIC RESET & TYPOGRAPHY --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-1) var(--color-bg-1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--color-bg-0);
+      color: var(--color-ink-1);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.6;
+      transition: var(--transition-smooth);
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+    }
+
+    a {
+      color: var(--color-ink-1);
+      text-decoration: none;
+      transition: var(--transition-smooth);
+    }
+
+    /* --- BACKGROUND PARTICLES & GRADIENTS --- */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -2;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124, 92, 255, 0.12) 0%, rgba(0,0,0,0) 70%);
+      top: -10%;
+      right: -10%;
+      z-index: -1;
+      pointer-events: none;
+      filter: blur(80px);
+      animation: float-glow 20s infinite alternate;
+    }
+
+    .ambient-glow-2 {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 214, 184, 0.08) 0%, rgba(0,0,0,0) 70%);
+      bottom: -10%;
+      left: -10%;
+      z-index: -1;
+      pointer-events: none;
+      filter: blur(80px);
+      animation: float-glow 25s infinite alternate-reverse;
+    }
+
+    @keyframes float-glow {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(80px, 50px) scale(1.15); }
+    }
+
+    /* --- HEADER & THEME SELECTOR --- */
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(12px);
+      background: rgba(6, 8, 24, 0.7);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1.2rem 4%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-orb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      box-shadow: 0 0 12px var(--accent-1);
+    }
+
+    nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    nav a {
+      font-weight: 500;
+      color: var(--color-ink-2);
+      position: relative;
+    }
+
+    nav a:hover, nav a.active {
+      color: var(--color-ink-1);
+    }
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent-gradient);
+      transition: var(--transition-smooth);
+    }
+
+    nav a:hover::after, nav a.active::after {
+      width: 100%;
+    }
+
+    /* Control Panel: Lang + Theme selectors */
+    .header-ctrls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .lang-selector {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--color-ink-3);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .lang-btn.active, .lang-btn:hover {
+      color: var(--color-ink-1);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .theme-selector {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .theme-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition-smooth);
+    }
+
+    .theme-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .theme-btn.active {
+      border-color: var(--color-ink-1);
+      box-shadow: 0 0 8px var(--accent-1);
+    }
+
+    .theme-aurora { background: linear-gradient(135deg, #7c5cff, #2bb6ff); }
+    .theme-cyberpunk { background: linear-gradient(135deg, #ff007f, #00ffcc); }
+    .theme-sunset { background: linear-gradient(135deg, #ff3366, #ffbb33); }
+
+    /* --- HERO SECTION --- */
+    .hero {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4rem 8%;
+      position: relative;
+    }
+
+    .hero-content {
+      max-width: 55%;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124, 92, 255, 0.15);
+      border: 1px solid rgba(124, 92, 255, 0.3);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent-2);
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hero h1 {
+      font-size: 4.5rem;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      letter-spacing: -1px;
+    }
+
+    .gradient-text {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--color-ink-2);
+      margin-bottom: 2.5rem;
+      max-width: 90%;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(124, 92, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(124, 92, 255, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--color-ink-1);
+      border: 1px solid var(--glass-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px);
+    }
+
+    /* --- HERO ORB VIEW --- */
+    .hero-orb-container {
+      width: 40%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Custom Canvas pixel grid orb */
+    .interactive-orb-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      transition: var(--transition-smooth);
+    }
+
+    .interactive-orb-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-5px);
+    }
+
+    .pixel-orb-canvas-wrapper {
+      width: 220px;
+      height: 220px;
+      position: relative;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .orb-glow {
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      filter: blur(30px);
+      opacity: 0.35;
+      animation: pulse-glow 3s infinite alternate;
+      z-index: 1;
+    }
+
+    #pixel-orb {
+      position: relative;
+      z-index: 2;
+      image-rendering: pixelated;
+      cursor: pointer;
+    }
+
+    .orb-state-label {
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--accent-2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .orb-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    .orb-ctrl-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-border);
+      color: var(--color-ink-2);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .orb-ctrl-btn.active, .orb-ctrl-btn:hover {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+    }
+
+    @keyframes pulse-glow {
+      0% { transform: scale(0.9); opacity: 0.25; }
+      100% { transform: scale(1.15); opacity: 0.5; }
+    }
+
+    /* --- SECTION LAYOUTS --- */
+    section {
+      padding: 8rem 8%;
+      position: relative;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 5rem;
+    }
+
+    .section-header h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      letter-spacing: -0.5px;
+    }
+
+    .section-header p {
+      color: var(--color-ink-2);
+      font-size: 1.15rem;
+    }
+
+    /* --- PROBLEM & SOLUTION CARDS --- */
+    .vision-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+    }
+
+    .vision-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 3rem;
+      backdrop-filter: blur(16px);
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vision-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-gradient);
+    }
+
+    .vision-card.problem::before {
+      background: linear-gradient(to bottom, #ff3366, #ff7733);
+    }
+
+    .vision-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .vision-card.problem h3 {
+      color: #ff5577;
+    }
+
+    .vision-card.solution h3 {
+      color: #00d6b8;
+    }
+
+    .vision-card ul {
+      list-style: none;
+    }
+
+    .vision-card ul li {
+      margin-bottom: 1.2rem;
+      padding-left: 28px;
+      position: relative;
+      color: var(--color-ink-2);
+    }
+
+    .vision-card ul li i {
+      position: absolute;
+      left: 0;
+      top: 5px;
+    }
+
+    .vision-card.problem ul li i { color: #ff5577; }
+    .vision-card.solution ul li i { color: #00d6b8; }
+
+    /* --- FEATURE GRID --- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2.2rem;
+    }
+
+    .feature-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      backdrop-filter: blur(16px);
+      transition: var(--transition-smooth);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--accent-1);
+      box-shadow: 0 12px 30px rgba(124, 92, 255, 0.15);
+    }
+
+    .feature-icon-wrapper {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      background: rgba(124, 92, 255, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+      color: var(--accent-2);
+      margin-bottom: 1.8rem;
+      border: 1px solid rgba(124, 92, 255, 0.2);
+      transition: var(--transition-smooth);
+    }
+
+    .feature-card:hover .feature-icon-wrapper {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .feature-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card p {
+      color: var(--color-ink-2);
+      font-size: 0.95rem;
+    }
+
+    /* --- TECH STACK SECTION --- */
+    .tech-stack-container {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .tech-map-visual {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 3rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .tech-node {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .tech-node:hover, .tech-node.active {
+      background: rgba(124, 92, 255, 0.08);
+      border-color: var(--accent-2);
+      transform: scale(1.05);
+    }
+
+    .tech-node i {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tech-node span {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .tech-description-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--accent-1);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 15px 30px rgba(124, 92, 255, 0.1);
+      min-height: 350px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .tech-desc-icon {
+      font-size: 2.5rem;
+      color: var(--accent-2);
+      margin-bottom: 1.5rem;
+    }
+
+    .tech-description-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .tech-description-card p {
+      color: var(--color-ink-2);
+      font-size: 1.05rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tech-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 1rem;
+    }
+
+    .tech-link {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent-2);
+    }
+
+    .tech-link:hover {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+    }
+
+    .tech-tag {
+      align-self: flex-start;
+      background: rgba(124, 92, 255, 0.15);
+      border: 1px solid rgba(124, 92, 255, 0.3);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-2);
+      text-transform: uppercase;
+    }
+
+    /* --- PIPELINE FLOW SIMULATOR --- */
+    .simulator-container {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 3.5rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+    }
+
+    .sim-buttons {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .sim-trigger {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--color-ink-1);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sim-trigger:hover, .sim-trigger.active {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+      box-shadow: 0 8px 20px rgba(124, 92, 255, 0.3);
+    }
+
+    .sim-pipeline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      margin: 4rem 0;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .sim-pipeline::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      z-index: 1;
+      transform: translateY(-50%);
+    }
+
+    @media(max-width: 1024px) {
+      .sim-pipeline::after { display: none; }
+    }
+
+    .sim-step {
+      background: var(--color-bg-2);
+      border: 2px solid var(--glass-border);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.6rem;
+      color: var(--color-ink-3);
+      position: relative;
+      z-index: 2;
+      transition: var(--transition-smooth);
+    }
+
+    .sim-step.active {
+      border-color: var(--accent-2);
+      color: var(--accent-3);
+      background: var(--color-bg-0);
+      box-shadow: 0 0 25px var(--accent-2);
+      transform: scale(1.15);
+    }
+
+    .sim-step span {
+      position: absolute;
+      bottom: -35px;
+      width: 140px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-ink-2);
+      font-family: 'Outfit', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sim-step.active span {
+      color: var(--color-ink-1);
+    }
+
+    .sim-terminal {
+      background: #020308;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #33ff33;
+      min-height: 180px;
+      font-size: 0.9rem;
+      overflow-y: auto;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .sim-terminal::before {
+      content: 'ASTRA PROCESS MONITOR';
+      position: absolute;
+      top: 5px;
+      right: 15px;
+      font-size: 0.65rem;
+      color: var(--color-ink-3);
+      letter-spacing: 1px;
+    }
+
+    .terminal-line {
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+      opacity: 0;
+      transform: translateY(5px);
+      animation: feed-line 0.3s forwards;
+    }
+
+    @keyframes feed-line {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- INTERACTIVE MOCKUP HUD --- */
+    .hud-mockup-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hud-window {
+      background: rgba(10, 15, 40, 0.6);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 600px;
+      height: 550px;
+      backdrop-filter: blur(25px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .hud-header {
+      padding: 1rem 1.5rem;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hud-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .hud-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .hud-dot.red { background: #ff5f56; }
+    .hud-dot.yellow { background: #ffbd2e; }
+    .hud-dot.green { background: #27c93f; }
+
+    .hud-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-ink-2);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hud-body {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: var(--accent-gradient);
+      color: #000;
+      font-weight: 600;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.astra {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border);
+      color: var(--color-ink-1);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-bubble.astra pre {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      margin-top: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(255,255,255,0.05);
+      color: #00ffcc;
+    }
+
+    .hud-footer {
+      padding: 1rem 1.5rem;
+      background: rgba(0,0,0,0.15);
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      gap: 10px;
+    }
+
+    .hud-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 30px;
+      padding: 10px 18px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: var(--transition-smooth);
+    }
+
+    .hud-input:focus {
+      border-color: var(--accent-2);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .hud-send {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      color: #000;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: var(--transition-smooth);
+    }
+
+    .hud-send:hover {
+      transform: scale(1.1);
+    }
+
+    /* --- THE FUTURES: SMART HOME ecosystem --- */
+    .smarthome-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .smarthome-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      backdrop-filter: blur(16px);
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .smarthome-card:hover {
+      border-color: var(--accent-2);
+      transform: translateY(-5px);
+    }
+
+    .smarthome-icon {
+      font-size: 2rem;
+      color: var(--accent-2);
+      margin-bottom: 1.5rem;
+    }
+
+    .smarthome-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .smarthome-status {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-3);
+    }
+
+    .smarthome-control-btn {
+      margin-top: 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      color: var(--color-ink-1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      width: 100%;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .smarthome-control-btn:hover {
+      background: var(--accent-gradient);
+      color: #000;
+      border-color: transparent;
+    }
+
+    /* --- SYSTEM DASHBOARD PANELS --- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .dashboard-panel {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .dashboard-panel .metric {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .dashboard-panel .label {
+      font-size: 0.8rem;
+      color: var(--color-ink-3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      background: rgba(3, 4, 12, 0.9);
+      border-top: 1px solid var(--glass-border);
+      padding: 3rem 8%;
+      text-align: center;
+      color: var(--color-ink-3);
+      font-size: 0.9rem;
+    }
+
+    footer p {
+      margin-bottom: 1rem;
+    }
+
+    footer .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    footer .social-icons a {
+      font-size: 1.3rem;
+      color: var(--color-ink-3);
+    }
+
+    footer .social-icons a:hover {
+      color: var(--color-ink-1);
+      transform: scale(1.2);
+    }
+
+    @media(max-width: 1024px) {
+      .smarthome-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width: 768px) {
+      .smarthome-grid { grid-template-columns: 1fr; }
+      .vision-cards { grid-template-columns: 1fr; }
+      .tech-stack-container { grid-template-columns: 1fr; }
+      .hero { flex-direction: column; text-align: center; gap: 4rem; padding-top: 6rem; }
+      .hero-content { max-width: 100%; }
+      .hero-orb-container { width: 100%; }
+      .btn-group { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background elements -->
+  <canvas id="particle-canvas"></canvas>
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-orb"></div>
+      <span>ASTRA</span>
+    </div>
+    <nav>
+      <a href="#vision" class="active" data-i18n="navVision">Vision</a>
+      <a href="#features" data-i18n="navFeatures">Features</a>
+      <a href="#tech-stack" data-i18n="navTechStack">Tech Stack</a>
+      <a href="#simulator" data-i18n="navSimulator">Pipeline Simulator</a>
+      <a href="#futures" data-i18n="navFutures">The Futures</a>
+      <a href="#hud-demo" data-i18n="navHUD">Interactive HUD</a>
+    </nav>
+    <div class="header-ctrls">
+      <!-- Language Switcher -->
+      <div class="lang-selector">
+        <button class="lang-btn active" onclick="switchLanguage('en')">EN</button>
+        <button class="lang-btn" onclick="switchLanguage('ru')">RU</button>
+        <button class="lang-btn" onclick="switchLanguage('uz')">UZ</button>
+      </div>
+      <!-- Theme Switcher -->
+      <div class="theme-selector">
+        <div class="theme-btn theme-aurora active" onclick="setTheme('aurora')" title="Aurora Preset"></div>
+        <div class="theme-btn theme-cyberpunk" onclick="setTheme('cyberpunk')" title="Cyberpunk Preset"></div>
+        <div class="theme-btn theme-sunset" onclick="setTheme('sunset')" title="Sunset Preset"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="hero" class="hero">
+    <div class="hero-content">
+      <div class="badge" data-i18n="heroBadge">
+        <i class="fa-solid fa-microchip"></i> AGI Voice Companion
+      </div>
+      <h1 data-i18n="heroTitle">Intelligent, Multi-Modal<br><span class="gradient-text">Personal Assistant</span></h1>
+      <p data-i18n="heroDesc">Astra bridges the gap between state-of-the-art AI language models and your local Operating System, delivering wake-word activation, offline voice generation, and autonomous task execution.</p>
+      <div class="btn-group">
+        <a href="#hud-demo" class="btn btn-primary"><i class="fa-solid fa-microphone"></i> Try Voice Online</a>
+        <a href="app-debug.apk" class="btn btn-secondary"><i class="fa-solid fa-android"></i> Download Android APK</a>
+      </div>
+    </div>
+    
+    <div class="hero-orb-container">
+      <div class="interactive-orb-card">
+        <div class="pixel-orb-canvas-wrapper">
+          <div class="orb-glow"></div>
+          <canvas id="pixel-orb" width="168" height="168"></canvas>
+        </div>
+        <div class="orb-state-label" id="orb-state-text" data-i18n="orbStateIdle">
+          <i class="fa-solid fa-circle-nodes"></i> Idle State
+        </div>
+        <div class="orb-controls">
+          <button class="orb-ctrl-btn active" onclick="setOrbState('idle')" data-i18n="orbBtnIdle">Idle</button>
+          <button class="orb-ctrl-btn" onclick="setOrbState('listening')" data-i18n="orbBtnListen">Listen</button>
+          <button class="orb-ctrl-btn" onclick="setOrbState('speaking')" data-i18n="orbBtnSpeak">Speak</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vision Section -->
+  <section id="vision">
+    <div class="section-header">
+      <h2 data-i18n="visionTitle">The Evolution of Assistants</h2>
+      <p data-i18n="visionSubtitle">Traditional smart assistants are static and confined. Astra brings autonomous planning and local execution to your workflow.</p>
+    </div>
+    
+    <div class="vision-cards">
+      <div class="vision-card problem">
+        <h3 data-i18n="visionOldTitle"><i class="fa-solid fa-circle-xmark"></i> The Old Model</h3>
+        <ul>
+          <li data-i18n="visionOld1"><i class="fa-solid fa-ban"></i> No local file system or hardware access.</li>
+          <li data-i18n="visionOld2"><i class="fa-solid fa-clock"></i> High audio round-trip latency.</li>
+          <li data-i18n="visionOld3"><i class="fa-solid fa-eye-slash"></i> Single-mode focus (cannot capture screens or cameras).</li>
+          <li data-i18n="visionOld4"><i class="fa-solid fa-memory"></i> Short-term context that forgets user routines and preferences.</li>
+        </ul>
+      </div>
+      
+      <div class="vision-card solution">
+        <h3 data-i18n="visionNewTitle"><i class="fa-solid fa-circle-check"></i> The Astra Model</h3>
+        <ul>
+          <li data-i18n="visionNew1"><i class="fa-solid fa-microchip"></i> System-level command integration (execution, navigation).</li>
+          <li data-i18n="visionNew2"><i class="fa-solid fa-bolt"></i> Local keyword spotting and offline synthesis tools.</li>
+          <li data-i18n="visionNew3"><i class="fa-solid fa-expand"></i> Multi-modal understanding (files, screens, camera snaps).</li>
+          <li data-i18n="visionNew4"><i class="fa-solid fa-brain"></i> Memory graph mapping JSON associations to a visual graph interface.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features">
+    <div class="section-header">
+      <h2 data-i18n="featuresTitle">Modular System Capabilities</h2>
+      <p data-i18n="featuresSubtitle">Astra comes fully equipped to handle advanced OS commands, autonomous coding tasks, and real-time alerts.</p>
+    </div>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-microphone"></i></div>
+        <h3 data-i18n="feat1Title">Voice-First KWS</h3>
+        <p data-i18n="feat1Desc">Continuous listening for "Hey Astra" or "Эй Астра" wake words using edge triggers, prompting instant speech-to-text response paths.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-desktop"></i></div>
+        <h3 data-i18n="feat2Title">OS & App Control</h3>
+        <p data-i18n="feat2Desc">Open applications, trigger media keys (Play/Pause), retrieve screenshots, or suspend the PC autonomously using structured tag interpreters.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-code"></i></div>
+        <h3 data-i18n="feat3Title">Autonomous Dev Mode</h3>
+        <p data-i18n="feat3Desc">Formulates code files, structures components, and tests scripts via terminal runs, functioning as a locally hosted coding agent.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-file-invoice"></i></div>
+        <h3 data-i18n="feat4Title">Document Generation</h3>
+        <p data-i18n="feat4Desc">Generates Word, Excel, and PowerPoint slides locally on demand, queuing generated assets directly to a user's Telegram chat.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-diagram-project"></i></div>
+        <h3 data-i18n="feat5Title">Visual Memory Graph</h3>
+        <p data-i18n="feat5Desc">Serializes and displays facts, tasks, and calendar events as interactive node structures, accessible as an Obsidian-style web graph.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h3 data-i18n="feat6Title">Multi-Platform clients</h3>
+        <p data-i18n="feat6Desc">Native Java client for Android Studio (minSdk 26) running side-by-side with a premium Windows Electron.js container HUD.</p>
+      </div>
+    </div>
+    
+    <!-- System Dashboard Panel -->
+    <div class="dashboard-grid">
+      <div class="dashboard-panel">
+        <div class="metric">450ms</div>
+        <div class="label" data-i18n="dashInference">Inference Latency</div>
+      </div>
+      <div class="dashboard-panel">
+        <div class="metric">12ms</div>
+        <div class="label" data-i18n="dashKWS">KWS Response</div>
+      </div>
+      <div class="dashboard-panel">
+        <div class="metric">142</div>
+        <div class="label" data-i18n="dashNodes">Graph Nodes</div>
+      </div>
+      <div class="dashboard-panel">
+        <div class="metric">Active</div>
+        <div class="label" data-i18n="dashTelegram">Telegram Queue</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack -->
+  <section id="tech-stack">
+    <div class="section-header">
+      <h2 data-i18n="techTitle">Integrated Tech Stack</h2>
+      <p data-i18n="techSubtitle">Click any component node below to explore how it powers Astra's multi-platform capabilities.</p>
+    </div>
+    
+    <div class="tech-stack-container">
+      <div class="tech-map-visual">
+        <div class="tech-grid">
+          <div class="tech-node active" onclick="showTech('electron')">
+            <i class="fa-brands fa-js"></i>
+            <span>Electron JS</span>
+          </div>
+          <div class="tech-node" onclick="showTech('flask')">
+            <i class="fa-brands fa-python"></i>
+            <span>Flask Backend</span>
+          </div>
+          <div class="tech-node" onclick="showTech('android')">
+            <i class="fa-brands fa-android"></i>
+            <span>Android Java</span>
+          </div>
+          <div class="tech-node" onclick="showTech('ionet')">
+            <i class="fa-solid fa-network-wired"></i>
+            <span>io.net DePIN</span>
+          </div>
+          <div class="tech-node" onclick="showTech('telegram')">
+            <i class="fa-brands fa-telegram"></i>
+            <span>Telegram Bot</span>
+          </div>
+          <div class="tech-node" onclick="showTech('speech')">
+            <i class="fa-solid fa-volume-high"></i>
+            <span>STT & TTS</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tech-description-card" id="tech-desc-card">
+        <div class="tech-desc-icon"><i class="fa-brands fa-js"></i></div>
+        <h3 id="tech-title">Electron Desktop HUD</h3>
+        <p id="tech-text">Electron wraps the React renderer into a borderless, glassmorphic window. It maps system-wide hotkeys (Win + Space) to reveal transparent overlays, minimizes to tray, and handles startup parameters.</p>
+        <span class="tech-tag" id="tech-tag">Desktop Shell</span>
+        <div class="tech-links" id="tech-links">
+          <a href="https://www.electronjs.org/" target="_blank" class="tech-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> Electron Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pipeline Flow Simulator -->
+  <section id="simulator">
+    <div class="section-header">
+      <h2 data-i18n="simTitle">Pipeline Flow Simulator</h2>
+      <p data-i18n="simSubtitle">Simulate how Astra executes actions end-to-end. Click a scenario to watch the execution pipeline light up.</p>
+    </div>
+    
+    <div class="simulator-container">
+      <div class="sim-buttons">
+        <button class="sim-trigger" onclick="runSimulation('theme')"><i class="fa-solid fa-palette"></i> "Hey Astra, switch to Dark Mode"</button>
+        <button class="sim-trigger" onclick="runSimulation('app')"><i class="fa-solid fa-window-maximize"></i> "Hey Astra, open Notepad"</button>
+        <button class="sim-trigger" onclick="runSimulation('code')"><i class="fa-solid fa-laptop-code"></i> "Hey Astra, write a server script"</button>
+      </div>
+      
+      <div class="sim-pipeline">
+        <div class="sim-step" id="step-kw" title="Keyword Detection">
+          <i class="fa-solid fa-ear-listen"></i>
+          <span data-i18n="stepKW">Wake Word</span>
+        </div>
+        <div class="sim-step" id="step-stt" title="Speech to Text">
+          <i class="fa-solid fa-font"></i>
+          <span data-i18n="stepSTT">STT Stream</span>
+        </div>
+        <div class="sim-step" id="step-intent" title="Intent Router">
+          <i class="fa-solid fa-route"></i>
+          <span data-i18n="stepIntent">Intent Route</span>
+        </div>
+        <div class="sim-step" id="step-llm" title="AI Brain">
+          <i class="fa-solid fa-brain"></i>
+          <span data-i18n="stepLLM">LLM Context</span>
+        </div>
+        <div class="sim-step" id="step-exec" title="Execution Engine">
+          <i class="fa-solid fa-gears"></i>
+          <span data-i18n="stepExec">OS Exec</span>
+        </div>
+        <div class="sim-step" id="step-tts" title="Voice Synthesis">
+          <i class="fa-solid fa-waveform-lines"></i>
+          <span data-i18n="stepTTS">TTS Output</span>
+        </div>
+      </div>
+      
+      <div class="sim-terminal" id="sim-term">
+        <div class="terminal-line" style="color: #6b73a3;">[Ready] Click a simulation scenario above to begin...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Futures Section (Smart Home) -->
+  <section id="futures">
+    <div class="section-header">
+      <h2 data-i18n="futuresHeading">THE FUTURES — Smart Home Ecosystem</h2>
+      <p data-i18n="futuresSubheading">Astra integrates locally with Home Assistant and LAN protocol servers, enabling lightning-fast, secure voice commands for your entire living space.</p>
+    </div>
+    
+    <div class="smarthome-grid">
+      <div class="smarthome-card" id="room-living">
+        <div class="smarthome-icon"><i class="fa-solid fa-couch"></i></div>
+        <h3 class="smarthome-title" data-i18n="roomLivingTitle">Living Room</h3>
+        <div class="smarthome-status" id="status-living" data-i18n="shLightsOn">Lights: ON | AC: 22°C</div>
+        <button class="smarthome-control-btn" onclick="toggleRoom('living')" data-i18n="shToggle">Toggle Lights</button>
+      </div>
+      
+      <div class="smarthome-card" id="room-kitchen">
+        <div class="smarthome-icon"><i class="fa-solid fa-kitchen-set"></i></div>
+        <h3 class="smarthome-title" data-i18n="roomKitchenTitle">Kitchen</h3>
+        <div class="smarthome-status" id="status-kitchen" data-i18n="shFridgeActive">Fridge: Active | Temp: 4°C</div>
+        <button class="smarthome-control-btn" onclick="toggleRoom('kitchen')" data-i18n="shFridgeBoost">Boost Cooling</button>
+      </div>
+
+      <div class="smarthome-card" id="room-bedroom">
+        <div class="smarthome-icon"><i class="fa-solid fa-bed"></i></div>
+        <h3 class="smarthome-title" data-i18n="roomBedroomTitle">Bedroom</h3>
+        <div class="smarthome-status" id="status-bedroom" data-i18n="shBedroomIdle">Lights: OFF | Air Purifier: ON</div>
+        <button class="smarthome-control-btn" onclick="toggleRoom('bedroom')" data-i18n="shToggle">Toggle Lights</button>
+      </div>
+
+      <div class="smarthome-card" id="room-garage">
+        <div class="smarthome-icon"><i class="fa-solid fa-warehouse"></i></div>
+        <h3 class="smarthome-title" data-i18n="roomGarageTitle">Garage</h3>
+        <div class="smarthome-status" id="status-garage" data-i18n="shGarageLocked">Gate: CLOSED | Charger: IDLE</div>
+        <button class="smarthome-control-btn" onclick="toggleRoom('garage')" data-i18n="shGarageGate">Open Gate</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive HUD Mockup -->
+  <section id="hud-demo">
+    <div class="section-header">
+      <h2 data-i18n="hudTitle">Interactive HUD Simulator</h2>
+      <p data-i18n="hudSubtitle">Interact directly with a mock instance of Astra's global HUD overlay. Try entering commands to see the response formats.</p>
+    </div>
+    
+    <div class="hud-mockup-container">
+      <div class="hud-window">
+        <div class="hud-header">
+          <div class="hud-dots">
+            <div class="hud-dot red"></div>
+            <div class="hud-dot yellow"></div>
+            <div class="hud-dot green"></div>
+          </div>
+          <div class="hud-title"><i class="fa-solid fa-terminal"></i> ASTRA_HUD_OVERLAY</div>
+          <div class="orb-state-label" style="font-size: 0.7rem; gap: 4px;"><i class="fa-solid fa-shield-halved" style="color: #00ffcc;"></i> SECURE</div>
+        </div>
+        
+        <div class="hud-body" id="hud-chat-body">
+          <div class="chat-bubble astra" data-i18n="hudWelcome">
+            Привет! Я Astra. Чем я могу помочь тебе на этом компьютере?
+          </div>
+        </div>
+        
+        <div class="hud-footer">
+          <button class="hud-send" onclick="startVoiceInput()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--accent-2); margin-right: 5px;"><i class="fa-solid fa-microphone"></i></button>
+          <input type="text" class="hud-input" id="hud-chat-input" placeholder="Type a command (e.g. 'open app', 'write script', 'help')..." onkeypress="handleChatKey(event)">
+          <button class="hud-send" onclick="sendChatMsg()"><i class="fa-solid fa-arrow-up"></i></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 Project Astra Team. Crafted with HSL-tailored colors & modern design principles.</p>
+    <p style="font-size: 0.75rem; color: #4a5072;">Self-contained offline-ready documentation client</p>
+    <div class="social-icons">
+      <a href="#"><i class="fa-brands fa-github"></i></a>
+      <a href="#"><i class="fa-brands fa-telegram"></i></a>
+      <a href="#"><i class="fa-brands fa-youtube"></i></a>
+    </div>
+  </footer>
+
+  <script>
+    /* --- i18n LOCALIZATION TRANSLATIONS --- */
+    let currentLanguage = 'en';
+    
+    const translations = {
+      en: {
+        navVision: "Vision",
+        navFeatures: "Features",
+        navTechStack: "Tech Stack",
+        navSimulator: "Simulator",
+        navFutures: "The Futures",
+        navHUD: "HUD",
+        heroBadge: "<i class=\"fa-solid fa-microchip\"></i> AGI Voice Companion",
+        heroTitle: "Intelligent, Multi-Modal<br><span class=\"gradient-text\">Personal Assistant</span>",
+        heroDesc: "Astra bridges the gap between state-of-the-art AI language models and your local Operating System, delivering wake-word activation, offline voice generation, and autonomous task execution.",
+        orbStateIdle: "<i class=\"fa-solid fa-circle-nodes\"></i> Idle State",
+        orbBtnIdle: "Idle",
+        orbBtnListen: "Listen",
+        orbBtnSpeak: "Speak",
+        visionTitle: "The Evolution of Assistants",
+        visionSubtitle: "Traditional smart assistants are static and confined. Astra brings autonomous planning and local execution to your workflow.",
+        visionOldTitle: "<i class=\"fa-solid fa-circle-xmark\"></i> The Old Model",
+        visionOld1: "<i class=\"fa-solid fa-ban\"></i> No local file system or hardware access.",
+        visionOld2: "<i class=\"fa-solid fa-clock\"></i> High audio round-trip latency.",
+        visionOld3: "<i class=\"fa-solid fa-eye-slash\"></i> Single-mode focus (cannot capture screens or cameras).",
+        visionOld4: "<i class=\"fa-solid fa-memory\"></i> Short-term context that forgets user routines and preferences.",
+        visionNewTitle: "<i class=\"fa-solid fa-circle-check\"></i> The Astra Model",
+        visionNew1: "<i class=\"fa-solid fa-microchip\"></i> System-level command integration (execution, navigation).",
+        visionNew2: "<i class=\"fa-solid fa-bolt\"></i> Local keyword spotting and offline synthesis tools.",
+        visionNew3: "<i class=\"fa-solid fa-expand\"></i> Multi-modal understanding (files, screens, camera snaps).",
+        visionNew4: "<i class=\"fa-solid fa-brain\"></i> Memory graph mapping JSON associations to a visual graph interface.",
+        featuresTitle: "Modular System Capabilities",
+        featuresSubtitle: "Astra comes fully equipped to handle advanced OS commands, autonomous coding tasks, and real-time alerts.",
+        feat1Title: "Voice-First KWS",
+        feat1Desc: "Continuous listening for \"Hey Astra\" or \"Эй Астра\" wake words using edge triggers, prompting instant speech-to-text response paths.",
+        feat2Title: "OS & App Control",
+        feat2Desc: "Open applications, trigger media keys (Play/Pause), retrieve screenshots, or suspend the PC autonomously using structured tag interpreters.",
+        feat3Title: "Autonomous Dev Mode",
+        feat3Desc: "Formulates code files, structures components, and tests scripts via terminal runs, functioning as a locally hosted coding agent.",
+        feat4Title: "Document Generation",
+        feat4Desc: "Generates Word, Excel, and PowerPoint slides locally on demand, queuing generated assets directly to a user's Telegram chat.",
+        feat5Title: "Visual Memory Graph",
+        feat5Desc: "Serializes and displays facts, tasks, and calendar events as interactive node structures, accessible as an Obsidian-style web graph.",
+        feat6Title: "Multi-Platform clients",
+        feat6Desc: "Native Java client for Android Studio (minSdk 26) running side-by-side with a premium Windows Electron.js container HUD.",
+        dashInference: "Inference Latency",
+        dashKWS: "KWS Response",
+        dashNodes: "Graph Nodes",
+        dashTelegram: "Telegram Queue",
+        techTitle: "Integrated Tech Stack",
+        techSubtitle: "Click any component node below to explore how it powers Astra's multi-platform capabilities.",
+        simTitle: "Pipeline Flow Simulator",
+        simSubtitle: "Simulate how Astra executes actions end-to-end. Click a scenario to watch the execution pipeline light up.",
+        stepKW: "Wake Word",
+        stepSTT: "STT Stream",
+        stepIntent: "Intent Route",
+        stepLLM: "LLM Context",
+        stepExec: "OS Exec",
+        stepTTS: "TTS Output",
+        futuresHeading: "THE FUTURES — Smart Home Ecosystem",
+        futuresSubheading: "Astra integrates locally with Home Assistant and LAN protocol servers, enabling lightning-fast, secure voice commands for your entire living space.",
+        roomLivingTitle: "Living Room",
+        shLightsOn: "Lights: ON | AC: 22°C",
+        shToggle: "Toggle Lights",
+        roomKitchenTitle: "Kitchen",
+        shFridgeActive: "Fridge: Active | Temp: 4°C",
+        shFridgeBoost: "Boost Cooling",
+        roomBedroomTitle: "Bedroom",
+        shBedroomIdle: "Lights: OFF | Air Purifier: ON",
+        roomGarageTitle: "Garage",
+        shGarageLocked: "Gate: CLOSED | Charger: IDLE",
+        shGarageGate: "Open Gate",
+        hudTitle: "Interactive HUD Simulator",
+        hudSubtitle: "Interact directly with a mock instance of Astra's global HUD overlay. Try entering commands to see the response formats.",
+        hudWelcome: "Hello! I am Astra. How can I help you on this computer today?"
+      },
+      ru: {
+        navVision: "Видение",
+        navFeatures: "Функции",
+        navTechStack: "Стек технологий",
+        navSimulator: "Симулятор",
+        navFutures: "Будущее",
+        navHUD: "Оверлей",
+        heroBadge: "<i class=\"fa-solid fa-microchip\"></i> Голосовой AGI компаньон",
+        heroTitle: "Интеллектуальный мультимодальный<br><span class=\"gradient-text\">персональный ассистент</span>",
+        heroDesc: "Astra сокращает разрыв между передовыми языковыми моделями ИИ и вашей локальной операционной системой, обеспечивая активацию по ключевому слову, генерацию голоса в офлайне и автономное выполнение задач.",
+        orbStateIdle: "<i class=\"fa-solid fa-circle-nodes\"></i> Режим ожидания",
+        orbBtnIdle: "Ожидание",
+        orbBtnListen: "Слушать",
+        orbBtnSpeak: "Говорить",
+        visionTitle: "Эволюция ассистентов",
+        visionSubtitle: "Традиционные голосовые помощники статичны и изолированы. Astra предлагает автономное планирование и локальное выполнение в вашей системе.",
+        visionOldTitle: "<i class=\"fa-solid fa-circle-xmark\"></i> Старая модель",
+        visionOld1: "<i class=\"fa-solid fa-ban\"></i> Нет доступа к локальной файловой системе и оборудованию.",
+        visionOld2: "<i class=\"fa-solid fa-clock\"></i> Высокая задержка обработки аудиоданных.",
+        visionOld3: "<i class=\"fa-solid fa-eye-slash\"></i> Одномодальный фокус (не распознает экран и камеру).",
+        visionOld4: "<i class=\"fa-solid fa-memory\"></i> Краткосрочный контекст, забывающий привычки пользователя.",
+        visionNewTitle: "<i class=\"fa-solid fa-circle-check\"></i> Модель Astra",
+        visionNew1: "<i class=\"fa-solid fa-microchip\"></i> Системная интеграция команд (запуск приложений, навигация).",
+        visionNew2: "<i class=\"fa-solid fa-bolt\"></i> Локальное распознавание ключевых слов и офлайн-синтез.",
+        visionNew3: "<i class=\"fa-solid fa-expand\"></i> Мультимодальность (файлы, захват экрана, снимки с камеры).",
+        visionNew4: "<i class=\"fa-solid fa-brain\"></i> Граф памяти связывает сущности JSON в удобный визуальный интерфейс.",
+        featuresTitle: "Модульные возможности системы",
+        featuresSubtitle: "Astra полностью оборудована для управления командами ОС, автономной разработки кода и отправки оповещений.",
+        feat1Title: "Голосовой запуск KWS",
+        feat1Desc: "Постоянное фоновое прослушивание ключевых слов \"Hey Astra\" или \"Эй Астра\" с мгновенным переходом к транскрипции.",
+        feat2Title: "Управление ОС и приложениями",
+        feat2Desc: "Запуск программ, симуляция медиа-клавиш, получение снимков экрана и перевод ПК в режим сна по AGI-тегам.",
+        feat3Title: "Автономный режим AGI",
+        feat3Desc: "Составляет файлы кода, развертывает проекты и проводит тесты в терминале как локальный агент разработки.",
+        feat4Title: "Генерация документов",
+        feat4Desc: "Создает файлы Word, Excel и PowerPoint локально на лету с отправкой готовых отчетов в ваш Telegram-чат.",
+        feat5Title: "Визуальный граф памяти",
+        feat5Desc: "Сериализует факты, задачи и события календаря в интерактивный граф связей в стиле базы знаний Obsidian.",
+        feat6Title: "Мультиплатформенность",
+        feat6Desc: "Нативное Java-приложение под Android Studio (minSdk 26) работает в связке с премиальным Electron.js HUD для Windows.",
+        dashInference: "Задержка вывода",
+        dashKWS: "Отклик KWS",
+        dashNodes: "Узлы графа",
+        dashTelegram: "Очередь Telegram",
+        techTitle: "Интегрированный стек",
+        techSubtitle: "Кликните на любой компонент ниже, чтобы изучить подробные технические параметры.",
+        simTitle: "Симулятор работы конвейера",
+        simSubtitle: "Посмотрите, как именно Astra обрабатывает запросы от микрофона до действия системы в реальном времени.",
+        stepKW: "Wake Word",
+        stepSTT: "STT поток",
+        stepIntent: "Маршрут",
+        stepLLM: "Языковая модель",
+        stepExec: "Выполнение ОС",
+        stepTTS: "Синтез голоса",
+        futuresHeading: "БУДУЩЕЕ — Экосистема Умного Дома",
+        futuresSubheading: "Astra напрямую интегрируется с Home Assistant и локальными LAN-серверами, выполняя голосовые команды без облачных задержек.",
+        roomLivingTitle: "Гостиная",
+        shLightsOn: "Свет: ВКЛ | Кондиционер: 22°C",
+        shToggle: "Переключить свет",
+        roomKitchenTitle: "Кухня",
+        shFridgeActive: "Холодильник: Активен | Темп: 4°C",
+        shFridgeBoost: "Усилить охлаждение",
+        roomBedroomTitle: "Спальня",
+        shBedroomIdle: "Свет: ВЫКЛ | Очиститель: ВКЛ",
+        roomGarageTitle: "Гараж",
+        shGarageLocked: "Ворота: ЗАКРЫТЫ | Зарядка: Жду",
+        shGarageGate: "Открыть ворота",
+        hudTitle: "Интерактивный HUD симулятор",
+        hudSubtitle: "Управляйте Astra в интерактивном режиме через текстовый симулятор оверлея.",
+        hudWelcome: "Привет! Я Astra. Чем я могу помочь тебе на этом компьютере сегодня?"
+      },
+      uz: {
+        navVision: "Konsept",
+        navFeatures: "Imkoniyatlar",
+        navTechStack: "Texnologiyalar",
+        navSimulator: "Simulyator",
+        navFutures: "Kelajak",
+        navHUD: "Interfeys",
+        heroBadge: "<i class=\"fa-solid fa-microchip\"></i> AGI Ovozli Yordamchisi",
+        heroTitle: "Aqlli va Multimodal<br><span class=\"gradient-text\">Shaxsiy Assistent</span>",
+        heroDesc: "Astra zamonaviy sun'iy intellekt tili modellari va sizning mahalliy operatsion tizimingiz o'rtasidagi tafovutni bartaraf etadi, kalit so'z orqali faollashuv, oflayn ovoz sintezi va avtonom vazifalarni bajarishni ta'minlaydi.",
+        orbStateIdle: "<i class=\"fa-solid fa-circle-nodes\"></i> Kutish rejimi",
+        orbBtnIdle: "Kutish",
+        orbBtnListen: "Eshitish",
+        orbBtnSpeak: "Gapirish",
+        visionTitle: "Yordamchilar Evolutsiyasi",
+        visionSubtitle: "Eski ovozli yordamchilar cheklangan va faol emas. Astra tizim darajasida avtonom rejalashtirish va ijro etishni taqdim etadi.",
+        visionOldTitle: "<i class=\"fa-solid fa-circle-xmark\"></i> Eski Model",
+        visionOld1: "<i class=\"fa-solid fa-ban\"></i> API va mahalliy fayl tizimiga kirish yo'qligi.",
+        visionOld2: "<i class=\"fa-solid fa-clock\"></i> Ovozni qayta ishlashdagi katta kechikishlar.",
+        visionOld3: "<i class=\"fa-solid fa-eye-slash\"></i> Faqat bitta modalga yo'naltirilganlik (ekranni ko'rmaydi).",
+        visionOld4: "<i class=\"fa-solid fa-memory\"></i> Foydalanuvchining odatlarini eslay olmaydigan qisqa xotira.",
+        visionNewTitle: "<i class=\"fa-solid fa-circle-check\"></i> Astra Modeli",
+        visionNew1: "<i class=\"fa-solid fa-microchip\"></i> Tizim darajasidagi boshqaruv (ilovalarni ochish, terminal buyruqlari).",
+        visionNew2: "<i class=\"fa-solid fa-bolt\"></i> Mahalliy kalit so'z aniqlash va oflayn ovoz sintezi.",
+        visionNew3: "<i class=\"fa-solid fa-expand\"></i> Multimodallik (fayllar, ekran rasmlari va kamera tasvirlari).",
+        visionNew4: "<i class=\"fa-solid fa-brain\"></i> Xotira graflari JSON ma'lumotlarini Obsidian vizual xaritasiga aylantiradi.",
+        featuresTitle: "Modulli Tizim Imkoniyatlari",
+        featuresSubtitle: "Astra OS buyruqlarini boshqarish, kod yozish va Telegram orqali xabar yuborish imkoniyatlariga ega.",
+        feat1Title: "Ovozli Faollashuv (KWS)",
+        feat1Desc: "\"Hey Astra\" yoki \"Эй Астра\" kalit so'zlarini doimiy eshitib turish va ovozli buyruqqa o'tish.",
+        feat2Title: "OS va Ilovalar Boshqaruvi",
+        feat2Desc: "Ilovalarni ishga tushirish, media tugmalarini bosish, ekran rasmini olish va kompyuterni uyqu rejimiga o'tkazish.",
+        feat3Title: "Avtonom AGI Rejimi",
+        feat3Desc: "Kod fayllarini yozadi, loyihalarni ishga tushiradi va terminalda test qiladi (avtonom dasturchi agent).",
+        feat4Title: "Hujjatlar Generatsiyasi",
+        feat4Desc: "Word, Excel va PowerPoint hujjatlarini mahalliy yaratadi va tayyor faylni Telegram orqali yuboradi.",
+        feat5Title: "Vizual Xotira Grafi",
+        feat5Desc: "Faktlar, vazifalar va taqvim voqealarini Obsidian uslubidagi vizual bog'lanishlar grafigiga aylantiradi.",
+        feat6Title: "Ko'p Platformali Mijozlar",
+        feat6Desc: "Android Studio (minSdk 26) uchun yozilgan Java ilova va Windows uchun oyna beruvchi Electron.js HUD interfeysi.",
+        dashInference: "Kechikish vaqti",
+        dashKWS: "KWS Javobi",
+        dashNodes: "Graf Tugunlari",
+        dashTelegram: "Telegram Navbati",
+        techTitle: "Integratsiyalashgan Texnologiyalar",
+        techSubtitle: "Texnik parametrlarni ko'rish uchun quyidagi texnologiya tugunlaridan birini bosing.",
+        simTitle: "Ish Jarayoni Simulyatori",
+        simSubtitle: "Astra ovozli buyruqdan tortib OS ijrosigacha bo'lgan yo'lni qanday bosib o'tishini jonli ko'ring.",
+        stepKW: "Kalit So'z",
+        stepSTT: "STT Oqimi",
+        stepIntent: "Yo'nalish",
+        stepLLM: "Katta Til Modeli",
+        stepExec: "OS Ijrosi",
+        stepTTS: "Ovoz Sintezi",
+        futuresHeading: "KELAJAK — Aqlli Uy Ekotizimi",
+        futuresSubheading: "Astra Home Assistant va LAN protokollari bilan to'g'ridan-to'g'ri integratsiyalashib, aqlli uyingizni tezkor boshqarish imkonini beradi.",
+        roomLivingTitle: "Mehmonxona",
+        shLightsOn: "Chiroqlar: YONIK | AC: 22°C",
+        shToggle: "Chiroqni o'zgartirish",
+        roomKitchenTitle: "Oshxona",
+        shFridgeActive: "Muzlatgich: Faol | Harorat: 4°C",
+        shFridgeBoost: "Sovutishni kuchaytirish",
+        roomBedroomTitle: "Yotoqxona",
+        shBedroomIdle: "Chiroqlar: O'CHIK | Havo tozalagich: YONIK",
+        roomGarageTitle: "Garaj",
+        shGarageLocked: "Darvoza: YOPILGAN | Quvvatlagich: Kutilmoqda",
+        shGarageGate: "Darvozani ochish",
+        hudTitle: "Interaktiv HUD Simulyatori",
+        hudSubtitle: "HUD oynasining simulyatori orqali Astra bilan to'g'ridan-to'g'ri yozishib ko'ring.",
+        hudWelcome: "Salom! Men Astra. Bugun kompyuterda sizga qanday yordam bera olaman?"
+      }
+    };
+
+    function switchLanguage(lang) {
+      currentLanguage = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if(btn.innerText.toLowerCase() === lang) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if(translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+      addTerminalLine(`[System] Language changed to: ${lang.toUpperCase()}`);
+    }
+
+    /* --- DATA FOR TECH STACK DISPLAY --- */
+    const techData = {
+      electron: {
+        title: "Electron JS Desktop Shell",
+        text: "Electron.js serves as our native Windows client container, wrapping React, CSS variables, and HTML5 canvas layers. It integrates Windows-native visual features including vibrancy layouts (Mica/Acrylic configurations) and utilizes custom IPC preloads to interface securely with local APIs. Operating system hooks route global hotkey registers like Win+Space and tray menu events directly.",
+        icon: "fa-brands fa-js",
+        tag: "Desktop Container",
+        url: "https://www.electronjs.org/"
+      },
+      flask: {
+        title: "Flask (Python 3.10+) Backend",
+        text: "The backend runtime is structured using Python 3.10+ and a Flask web service. It manages background OS automation tasks, processes camera-based computer vision actions (with OpenCV/dlib), registers user memories in JSON repositories, and triggers Telegram API channels. Flask runs locally over secure HTTPS (ssl_context='adhoc') to grant standard browsers microphone access for audio testing.",
+        icon: "fa-brands fa-python",
+        tag: "Local API Middleware",
+        url: "https://flask.palletsprojects.com/"
+      },
+      android: {
+        title: "Native Android Client (Java)",
+        text: "Built strictly in native Java target SDK 34 (min SDK 26) to maximize processing speed on mobile devices. Renders AstraOrbView using raw Canvas drawing and PixelParticlesView via a dedicated hardware-accelerated SurfaceView tied to device rotation sensors. Background tasks utilize WorkManager schedules, and local messages map inside SQLite schemas managed by Android's Room ORM.",
+        icon: "fa-brands fa-android",
+        tag: "Mobile Native SDK",
+        url: "https://developer.android.com/"
+      },
+      ionet: {
+        title: "io.net DePIN AI Inference",
+        text: "Decentralized AI model inference hosted via io.net's massive DePIN GPU clusters. Astra utilizes these remote model completion endpoints to classify complex text inputs and generate replies, achieving near-zero latency by taking advantage of low-cost, decentralized GPU resources. Models include Llama-3.1 and DeepSeek-R1-0528 pipelines.",
+        icon: "fa-solid fa-network-wired",
+        tag: "Decentralized Brain",
+        url: "https://io.net/"
+      },
+      telegram: {
+        title: "Telegram Bot API Bridge",
+        text: "A bidirectional messaging bridge powered by python-telegram-bot. When users ask Astra to generate slides or capture screenshots remotely, the local backend utilizes asynchronous Telegram routines to upload `.docx`, `.xlsx`, or `.png` files directly to the user's chat space, allowing full remote control of the desktop environment.",
+        icon: "fa-brands fa-telegram",
+        tag: "Remote Interface",
+        url: "https://core.telegram.org/bots"
+      },
+      speech: {
+        title: "Speech Recognition & Edge-TTS",
+        text: "Speech-to-Text maps audio streams captured by Python's sounddevice library and feeds them into Google's speech recognition pipeline. Text-to-Speech uses Microsoft's Edge-TTS module to download natural-sounding offline audio responses (Calm, Bright, Pixel, Whisper) with customized pitches.",
+        icon: "fa-solid fa-volume-high",
+        tag: "Voice Pipeline",
+        url: "https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API"
+      }
+    };
+
+    function showTech(key) {
+      document.querySelectorAll('.tech-node').forEach(node => node.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      const data = techData[key];
+      document.getElementById('tech-title').innerText = data.title;
+      document.getElementById('tech-text').innerText = data.text;
+      document.getElementById('tech-tag').innerText = data.tag;
+      document.getElementById('tech-desc-card').querySelector('.tech-desc-icon').innerHTML = `<i class="${data.icon}"></i>`;
+      document.getElementById('tech-links').innerHTML = `
+        <a href="${data.url}" target="_blank" class="tech-link"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Website</a>
+      `;
+    }
+
+    /* --- THEME CONTROLLER --- */
+    function setTheme(themeName) {
+      document.body.setAttribute('data-theme', themeName);
+      document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.theme-${themeName}`).classList.add('active');
+      addTerminalLine(`[Theme] Changed active system theme preset to: ${themeName.toUpperCase()}`);
+    }
+
+    /* --- CANVAS 14X14 PIXEL ORB RENDERER (Smiling Laughing Robot!) --- */
+    const orbCanvas = document.getElementById('pixel-orb');
+    const orbCtx = orbCanvas.getContext('2d');
+    let orbState = 'idle';
+    let frameCount = 0;
+
+    const faces = {
+      idle: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,0,0,0,0,1,0,0,2,0], 
+        [0,2,0,0,0,1,1,1,1,0,0,0,2,0], 
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ],
+      blink: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,0,0,0,0,1,0,0,2,0], 
+        [0,2,0,0,0,1,1,1,1,0,0,0,2,0], 
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ],
+      listening: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,0,0,0,0,1,0,0,2,0], 
+        [0,2,0,0,0,1,0,0,1,0,0,0,2,0], 
+        [0,2,0,0,0,0,1,1,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ],
+      speaking: [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,1,1,0,0,1,1,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,2,0,0,1,0,0,0,0,1,0,0,2,0], 
+        [0,2,0,0,0,1,1,1,1,0,0,0,2,0], 
+        [0,2,0,0,0,0,1,1,0,0,0,0,2,0],
+        [0,2,0,0,0,0,0,0,0,0,0,0,2,0],
+        [0,0,2,0,0,0,0,0,0,0,0,2,0,0],
+        [0,0,0,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      ]
+    };
+
+    function setOrbState(state) {
+      orbState = state;
+      document.querySelectorAll('.orb-ctrl-btn').forEach(btn => {
+        if(btn.innerText.toLowerCase().includes(state.substring(0,4))) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      const stateText = state.charAt(0).toUpperCase() + state.slice(1);
+      document.getElementById('orb-state-text').innerHTML = `<i class="fa-solid fa-circle-nodes"></i> ${stateText} State`;
+    }
+
+    function drawPixelOrb() {
+      orbCtx.clearRect(0, 0, orbCanvas.width, orbCanvas.height);
+      const pixelSize = orbCanvas.width / 14;
+      
+      let face = faces[orbState];
+      
+      if(orbState === 'idle') {
+        if(frameCount % 120 >= 114) {
+          face = faces.blink;
+        }
+      }
+      
+      for(let r = 0; r < 14; r++) {
+        for(let c = 0; c < 14; c++) {
+          const type = face[r][c];
+          if(type === 0) continue;
+          
+          let gradient = orbCtx.createLinearGradient(0, 0, orbCanvas.width, orbCanvas.height);
+          
+          if(type === 2) {
+            const color1 = getComputedStyle(document.body).getPropertyValue('--accent-1').trim() || '#7c5cff';
+            const color2 = getComputedStyle(document.body).getPropertyValue('--accent-3').trim() || '#00d6b8';
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            orbCtx.fillStyle = gradient;
+          } else if(type === 1) {
+            orbCtx.fillStyle = getComputedStyle(document.body).getPropertyValue('--color-ink-1').trim() || '#ffffff';
+          }
+          
+          orbCtx.fillRect(c * pixelSize, r * pixelSize, pixelSize - 1, pixelSize - 1);
+        }
+      }
+      
+      orbCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent-2').trim() || '#2bb6ff';
+      orbCtx.lineWidth = 2;
+      orbCtx.beginPath();
+      const radius = orbCanvas.width / 2 - 4;
+      const startAngle = (frameCount * 0.05) % (Math.PI * 2);
+      const endAngle = startAngle + (Math.PI * 0.7);
+      
+      orbCtx.arc(orbCanvas.width/2, orbCanvas.height/2, radius, startAngle, endAngle);
+      orbCtx.stroke();
+      
+      orbCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent-3').trim() || '#00d6b8';
+      orbCtx.beginPath();
+      orbCtx.arc(orbCanvas.width/2, orbCanvas.height/2, radius - 4, startAngle + Math.PI, endAngle + Math.PI);
+      orbCtx.stroke();
+      
+      frameCount++;
+      requestAnimationFrame(drawPixelOrb);
+    }
+
+    drawPixelOrb();
+
+    /* --- BACKGROUND PARTICLES SIMULATION --- */
+    const particleCanvas = document.getElementById('particle-canvas');
+    const pCtx = particleCanvas.getContext('2d');
+    let particles = [];
+    
+    function resizeCanvas() {
+      particleCanvas.width = window.innerWidth;
+      particleCanvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    for(let i = 0; i < 70; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        size: Math.random() * 2 + 1,
+        speedX: (Math.random() - 0.5) * 0.15,
+        speedY: (Math.random() - 0.5) * 0.15,
+        opacity: Math.random() * 0.5 + 0.3
+      });
+    }
+
+    let mouse = { x: null, y: null };
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.x;
+      mouse.y = e.y;
+    });
+    
+    function animateParticles() {
+      pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+      const color1 = getComputedStyle(document.body).getPropertyValue('--accent-1').trim() || '#7c5cff';
+      pCtx.fillStyle = color1;
+      
+      particles.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        
+        let driftX = 0;
+        let driftY = 0;
+        if(mouse.x !== null) {
+          driftX = (mouse.x - window.innerWidth/2) * p.size * 0.015;
+          driftY = (mouse.y - window.innerHeight/2) * p.size * 0.015;
+        }
+        
+        if(p.x < 0) p.x = window.innerWidth;
+        if(p.x > window.innerWidth) p.x = 0;
+        if(p.y < 0) p.y = window.innerHeight;
+        if(p.y > window.innerHeight) p.y = 0;
+        
+        pCtx.globalAlpha = p.opacity;
+        pCtx.beginPath();
+        pCtx.arc(p.x + driftX, p.y + driftY, p.size, 0, Math.PI * 2);
+        pCtx.fill();
+      });
+      
+      requestAnimationFrame(animateParticles);
+    }
+    
+    animateParticles();
+
+    /* --- PIPELINE SIMULATOR ENGINE --- */
+    const simSteps = ['step-kw', 'step-stt', 'step-intent', 'step-llm', 'step-exec', 'step-tts'];
+    
+    function addTerminalLine(text, color = '#33ff33') {
+      const term = document.getElementById('sim-term');
+      const line = document.createElement('div');
+      line.className = 'terminal-line';
+      line.style.color = color;
+      line.innerText = `[AstraOS] ${text}`;
+      term.appendChild(line);
+      term.scrollTop = term.scrollHeight;
+    }
+    
+    async function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function runSimulation(type) {
+      simSteps.forEach(id => document.getElementById(id).classList.remove('active'));
+      
+      document.querySelectorAll('.sim-trigger').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      
+      document.getElementById('sim-term').innerHTML = '';
+      
+      if(type === 'theme') {
+        setOrbState('listening');
+        addTerminalLine("Listening on microphone for wake keyword...", "#6b73a3");
+        await sleep(1000);
+        
+        document.getElementById('step-kw').classList.add('active');
+        addTerminalLine("✔ Keyword 'Hey Astra' detected in background thread.", "#00ffcc");
+        await sleep(1200);
+        
+        document.getElementById('step-stt').classList.add('active');
+        addTerminalLine("STT: Speech chunk recorded. Sending to Speech Engine...", "#b6bbe0");
+        await sleep(1000);
+        addTerminalLine("STT: Decoded input query -> 'switch to dark mode'", "#ffbb33");
+        await sleep(1000);
+        
+        document.getElementById('step-intent').classList.add('active');
+        addTerminalLine("Intent Classifier: Scanning command using internal Regex maps...", "#b6bbe0");
+        await sleep(800);
+        addTerminalLine("Intent Match: Rule match found for [STYLE_THEME_MUTATION] -> theme: 'cyberpunk'", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-exec').classList.add('active');
+        addTerminalLine("Execution: Invoking local layout theme switcher interface...", "#b6bbe0");
+        setTheme('cyberpunk');
+        await sleep(800);
+        addTerminalLine("Execution: theme.css variables re-tinted successfully.", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-tts').classList.add('active');
+        setOrbState('speaking');
+        addTerminalLine("TTS: Synthesizing offline feedback voice response...", "#b6bbe0");
+        await sleep(800);
+        addTerminalLine("Astra speaking: 'Switching theme to Cyberpunk.'", "#ff007f");
+        await sleep(2500);
+        
+        setOrbState('idle');
+        addTerminalLine("✔ Pipeline sequence completed successfully.", "#33ff33");
+        
+      } else if(type === 'app') {
+        setOrbState('listening');
+        addTerminalLine("Listening on microphone for wake keyword...", "#6b73a3");
+        await sleep(1000);
+        
+        document.getElementById('step-kw').classList.add('active');
+        addTerminalLine("✔ Keyword 'Hey Astra' detected.", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-stt').classList.add('active');
+        addTerminalLine("STT: Decoded input query -> 'open notepad application'", "#ffbb33");
+        await sleep(1000);
+        
+        document.getElementById('step-intent').classList.add('active');
+        addTerminalLine("Intent Classifier: No direct regex match, routing to io.net fast LLM classifier...", "#b6bbe0");
+        await sleep(1200);
+        
+        document.getElementById('step-llm').classList.add('active');
+        addTerminalLine("LLM (io.net Maverick): Analyzing request intent...", "#b6bbe0");
+        await sleep(1000);
+        addTerminalLine("LLM Output: Executing tool call -> run_app(alias='notepad')", "#ffbb33");
+        await sleep(1000);
+        
+        document.getElementById('step-exec').classList.add('active');
+        addTerminalLine("Execution: Resolving windows paths.json...", "#b6bbe0");
+        await sleep(600);
+        addTerminalLine("Execution: Spawning process shell -> start '' 'notepad.exe'", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-tts').classList.add('active');
+        setOrbState('speaking');
+        addTerminalLine("Astra speaking: 'Opening Notepad for you.'", "#7c5cff");
+        await sleep(2000);
+        
+        setOrbState('idle');
+        addTerminalLine("✔ Pipeline sequence completed successfully.", "#33ff33");
+        
+      } else if(type === 'code') {
+        setOrbState('listening');
+        addTerminalLine("Listening on microphone for wake keyword...", "#6b73a3");
+        await sleep(1000);
+        
+        document.getElementById('step-kw').classList.add('active');
+        addTerminalLine("✔ Keyword 'Hey Astra' detected.", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-stt').classList.add('active');
+        addTerminalLine("STT: Decoded input query -> 'write a node server and test it'", "#ffbb33");
+        await sleep(1000);
+        
+        document.getElementById('step-intent').classList.add('active');
+        addTerminalLine("Intent Classifier: Triggered AGI_SOFTWARE_ENGINEERING mode.", "#ffbb33");
+        await sleep(800);
+        
+        document.getElementById('step-llm').classList.add('active');
+        addTerminalLine("LLM (io.net DeepSeek-R1): Formulating development plan...", "#b6bbe0");
+        await sleep(1500);
+        addTerminalLine("LLM: Formulated plan steps. Writing file 'server.js'...", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-exec').classList.add('active');
+        addTerminalLine("Execution: Writing projects/server.js code content to workspace...", "#b6bbe0");
+        await sleep(800);
+        addTerminalLine("Execution: Spawning terminal subprocess -> node projects/server.js", "#ffbb33");
+        await sleep(1200);
+        addTerminalLine("Subprocess Output: Server running on port 8080 successfully.", "#00ffcc");
+        await sleep(1000);
+        
+        document.getElementById('step-tts').classList.add('active');
+        setOrbState('speaking');
+        addTerminalLine("Astra speaking: 'I created and launched the Node server on port 8080.'", "#00d6b8");
+        await sleep(2500);
+        
+        setOrbState('idle');
+        addTerminalLine("✔ AGI execution finished.", "#33ff33");
+      }
+    }
+
+    /* --- BROWSER SPEECH RECOGNITION & SYNTHESIS (REAL TRY-OUT FOR USERS!) --- */
+    let recognition = null;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechGen = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechGen();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      
+      recognition.onstart = () => {
+        setOrbState('listening');
+        addTerminalLine("[Mic] Browser recording started. Speak your command now...", "#00ffcc");
+      };
+      
+      recognition.onerror = (e) => {
+        addTerminalLine(`[Mic] Error: ${e.error}`, "#ff5577");
+        setOrbState('idle');
+      };
+      
+      recognition.onend = () => {
+        setOrbState('idle');
+      };
+      
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        addTerminalLine(`[Mic] Speech decoded -> "${transcript}"`, "#ffbb33");
+        appendBubble(transcript, 'user');
+        processAstraResponse(transcript);
+      };
+    }
+
+    function startVoiceInput() {
+      if (!recognition) {
+        alert("Your browser does not support Speech Recognition. Try using Google Chrome, Microsoft Edge, or Safari.");
+        return;
+      }
+      
+      if (currentLanguage === 'ru') {
+        recognition.lang = 'ru-RU';
+      } else if (currentLanguage === 'uz') {
+        recognition.lang = 'uz-UZ';
+      } else {
+        recognition.lang = 'en-US';
+      }
+      
+      try {
+        recognition.start();
+      } catch (err) {
+        recognition.stop();
+      }
+    }
+
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        let langCode = 'en-US';
+        if (currentLanguage === 'ru') langCode = 'ru-RU';
+        if (currentLanguage === 'uz') langCode = 'uz-UZ';
+        utterance.lang = langCode;
+        
+        utterance.pitch = 1.1; 
+        utterance.rate = 1.0;
+        
+        utterance.onstart = () => {
+          setOrbState('speaking');
+        };
+        utterance.onend = () => {
+          setOrbState('idle');
+        };
+        
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    /* --- INTERACTIVE HUD OVERLAY CHAT --- */
+    const chatInput = document.getElementById('hud-chat-input');
+    const chatBody = document.getElementById('hud-chat-body');
+    
+    function handleChatKey(e) {
+      if(e.key === 'Enter') {
+        sendChatMsg();
+      }
+    }
+    
+    async function sendChatMsg() {
+      const text = chatInput.value.trim();
+      if(!text) return;
+      
+      chatInput.value = '';
+      appendBubble(text, 'user');
+      processAstraResponse(text);
+    }
+
+    async function processAstraResponse(text) {
+      setOrbState('speaking');
+      await sleep(1000);
+      
+      const cleanText = text.toLowerCase();
+      let response = '';
+      
+      if(cleanText.includes('open') || cleanText.includes('run') || cleanText.includes('запусти') || cleanText.includes('открой')) {
+        let app = 'calculator';
+        if(cleanText.includes('note') || cleanText.includes('блокнот')) app = 'notepad';
+        if(cleanText.includes('browser') || cleanText.includes('web') || cleanText.includes('браузер')) app = 'chrome';
+        
+        if (currentLanguage === 'ru') {
+          response = `Запускаю процесс: ${app}. Выполняю системный тег запуска: [RUN_APP: ${app}]`;
+        } else if (currentLanguage === 'uz') {
+          response = `Dasturni ishga tushiraman: ${app}. Tizimni ishga tushirish buyrug'i: [RUN_APP: ${app}]`;
+        } else {
+          response = `Spawning process: ${app}. Executing system launch tag: [RUN_APP: ${app}]`;
+        }
+        appendBubble(`Spawning process: <b>${app}</b>.<br>Executing shell launch tag: <pre>[RUN_APP: ${app}]</pre>`, 'astra');
+      } 
+      else if(cleanText.includes('script') || cleanText.includes('code') || cleanText.includes('write') || cleanText.includes('код') || cleanText.includes('напиши')) {
+        if (currentLanguage === 'ru') {
+          response = "Перехожу в автономный режим AGI. Создаю и тестирую файлы скриптов.";
+        } else if (currentLanguage === 'uz') {
+          response = "Avtonom AGI rejimiga o'taman. Skript fayllarini yaratib sinab ko'raman.";
+        } else {
+          response = "Entering AGI autonomous engineering mode. Creating and testing script files.";
+        }
+        appendBubble(`Entering AGI autonomous engineering mode...<br>Performing workspace writes:<br><pre>[PLAN]
+- Step 1: Write test script
+[FILES]
+test.js:
+\`\`\`js
+console.log("Hello from Astra!");
+\`\`\`
+[COMMANDS]
+[node test.js]
+[EXPLANATION]
+Script generated and tested successfully!</pre>`, 'astra');
+      } 
+      else if(cleanText.includes('theme') || cleanText.includes('sunset') || cleanText.includes('cyberpunk') || cleanText.includes('aurora') || cleanText.includes('тему') || cleanText.includes('цвета')) {
+        let selected = 'cyberpunk';
+        if(cleanText.includes('aurora') || cleanText.includes('аврора')) selected = 'aurora';
+        if(cleanText.includes('sunset') || cleanText.includes('закат')) selected = 'sunset';
+        setTheme(selected);
+        
+        if (currentLanguage === 'ru') {
+          response = `Изменяю цветовую схему оформления на ${selected}.`;
+        } else if (currentLanguage === 'uz') {
+          response = `Tizim rang sxemasini ${selected} rejimiga o'zgartiraman.`;
+        } else {
+          response = `Switching theme variables to ${selected} dynamically.`;
+        }
+        appendBubble(`Switching theme variables dynamically.<br>Sending system mutation command: <pre>[STYLE_THEME_MUTATION: ${selected}]</pre>`, 'astra');
+      } 
+      else if(cleanText.includes('screenshot') || cleanText.includes('экран') || cleanText.includes('rasm')) {
+        if (currentLanguage === 'ru') {
+          response = "Делаю снимок экрана и отправляю его в Telegram.";
+        } else if (currentLanguage === 'uz') {
+          response = "Ekran rasmini olib Telegram orqali yuboraman.";
+        } else {
+          response = "Capturing Windows workspace and sending via Telegram.";
+        }
+        appendBubble(`Capturing current Windows workspace screenshot.<br>Queuing file to Telegram chat bot: <pre>[TAKE_SCREENSHOT]</pre>`, 'astra');
+      }
+      else if(cleanText.includes('help') || cleanText.includes('hello') || cleanText.includes('привет') || cleanText.includes('salom')) {
+        if (currentLanguage === 'ru') {
+          response = "Привет! Я Astra. Вы можете сказать: открой блокнот, напиши код, смени тему на закат или сделай скриншот.";
+        } else if (currentLanguage === 'uz') {
+          response = "Salom! Men Astra. Menga: bloknotni och, kod yoz, rangni o'zgartir yoki ekran rasmini ol deyishingiz mumkin.";
+        } else {
+          response = "Hello! I am Astra. You can speak commands like: open notepad, write code, change theme to sunset, or take screenshot.";
+        }
+        appendBubble(response, 'astra');
+      }
+      else {
+        if (currentLanguage === 'ru') {
+          response = `Я услышала ваш запрос: "${text}". Я обрабатываю его параметры.`;
+        } else if (currentLanguage === 'uz') {
+          response = `So'rovingizni eshitdim: "${text}". Tizim buyruqni qayta ishlamoqda.`;
+        } else {
+          response = `I heard your query: "${text}". Processing parameters inside the mock system.`;
+        }
+        appendBubble(`Processed using **io.net DePIN AI** Model:<br>
+        <i>"Command '${text}' accepted. Processing variables inside local system."</i>`, 'astra');
+      }
+      
+      speakText(response);
+    }
+    
+    function appendBubble(content, type) {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${type}`;
+      bubble.innerHTML = content;
+      chatBody.appendChild(bubble);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    /* --- THE FUTURES: SMART HOME ROOM CONTROLLERS --- */
+    const homeStates = {
+      living: { lights: true, ac: 22 },
+      kitchen: { fridgeBoost: false },
+      bedroom: { lights: false, purifier: true },
+      garage: { gateOpen: false }
+    };
+
+    function toggleRoom(room) {
+      if(room === 'living') {
+        homeStates.living.lights = !homeStates.living.lights;
+        const statusText = homeStates.living.lights 
+          ? (currentLanguage === 'ru' ? "Свет: ВКЛ | Кондиционер: 22°C" : currentLanguage === 'uz' ? "Chiroqlar: YONIK | AC: 22°C" : "Lights: ON | AC: 22°C")
+          : (currentLanguage === 'ru' ? "Свет: ВЫКЛ | Кондиционер: 22°C" : currentLanguage === 'uz' ? "Chiroqlar: O'CHIK | AC: 22°C" : "Lights: OFF | AC: 22°C");
+        document.getElementById('status-living').innerText = statusText;
+        addTerminalLine(`[SmartHome] Living Room lights toggled to ${homeStates.living.lights ? 'ON' : 'OFF'}`);
+      }
+      else if(room === 'kitchen') {
+        homeStates.kitchen.fridgeBoost = !homeStates.kitchen.fridgeBoost;
+        const statusText = homeStates.kitchen.fridgeBoost 
+          ? (currentLanguage === 'ru' ? "Холодильник: Турбо-Охлаждение | 2°C" : currentLanguage === 'uz' ? "Muzlatgich: Kuchaytirilgan | 2°C" : "Fridge: Turbo Boost | 2°C")
+          : (currentLanguage === 'ru' ? "Холодильник: Активен | 4°C" : currentLanguage === 'uz' ? "Muzlatgich: Faol | 4°C" : "Fridge: Active | Temp: 4°C");
+        document.getElementById('status-kitchen').innerText = statusText;
+        addTerminalLine(`[SmartHome] Kitchen fridge cooling boost set to ${homeStates.kitchen.fridgeBoost ? 'ACTIVE' : 'NORMAL'}`);
+      }
+      else if(room === 'bedroom') {
+        homeStates.bedroom.lights = !homeStates.bedroom.lights;
+        const statusText = homeStates.bedroom.lights 
+          ? (currentLanguage === 'ru' ? "Свет: ВКЛ | Очиститель: ВКЛ" : currentLanguage === 'uz' ? "Chiroqlar: YONIK | Tozalagich: YONIK" : "Lights: ON | Purifier: ON")
+          : (currentLanguage === 'ru' ? "Свет: ВЫКЛ | Очиститель: ВКЛ" : currentLanguage === 'uz' ? "Chiroqlar: O'CHIK | Tozalagich: YONIK" : "Lights: OFF | Air Purifier: ON");
+        document.getElementById('status-bedroom').innerText = statusText;
+        addTerminalLine(`[SmartHome] Bedroom lights toggled to ${homeStates.bedroom.lights ? 'ON' : 'OFF'}`);
+      }
+      else if(room === 'garage') {
+        homeStates.garage.gateOpen = !homeStates.garage.gateOpen;
+        const statusText = homeStates.garage.gateOpen 
+          ? (currentLanguage === 'ru' ? "Ворота: ОТКРЫТЫ | Зарядка: Жду" : currentLanguage === 'uz' ? "Darvoza: OCHIK | Quvvatlagich: Kutilmoqda" : "Gate: OPEN | Charger: IDLE")
+          : (currentLanguage === 'ru' ? "Ворота: ЗАКРЫТЫ | Зарядка: Жду" : currentLanguage === 'uz' ? "Darvoza: YOPILGAN | Quvvatlagich: Kutilmoqda" : "Gate: CLOSED | Charger: IDLE");
+        document.getElementById('status-garage').innerText = statusText;
+        addTerminalLine(`[SmartHome] Garage gate action requested -> ${homeStates.garage.gateOpen ? 'OPENING' : 'CLOSING'}`);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      switchLanguage('en');
+    });
+  </script>
+</body>
+</html>
